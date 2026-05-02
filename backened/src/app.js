@@ -19,6 +19,14 @@ mongoose.connect(process.env.MONGO_URI)
   .then(() => console.log("DB connected"))
   .catch((err) => console.log(err));
 
+  app.get("/", (req, res) => {
+  res.send("API running");
+});
+
+app.get("/api", (req, res) => {
+  res.send("API working");
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
