@@ -1,5 +1,4 @@
 import express from "express";
-import mongoose from "mongoose";
 import cors from "cors";
 import dotenv from "dotenv";
 
@@ -15,16 +14,8 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => console.log("DB connected"))
-  .catch((err) => console.log(err));
-
-  app.get("/", (req, res) => {
+app.get("/", (req, res) => {
   res.send("API running");
-});
-
-app.get("/api", (req, res) => {
-  res.send("API working");
 });
 
 app.get("/health", (req, res) => {
