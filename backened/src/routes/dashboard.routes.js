@@ -1,10 +1,10 @@
 import express from "express";
 import Task from "../models/Task.js";
-import auth from "../middleware/AuthMiddleware.js";
+import {protect} from "../middleware/AuthMiddleware.js";
 
 const router = express.Router();
 
-router.get("/stats", auth, async (req, res) => {
+router.get("/stats", protect, async (req, res) => {
   try {
     const userId = req.user.id;
 
