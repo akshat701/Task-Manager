@@ -5,14 +5,17 @@ import TaskColumn from "../components/task/TaskColumn";
 import TaskModal from "../components/task/TaskModal";
 import Loader from "../components/common/Loader";
 import Toast from "../components/common/Toast";
+import MembersModal from "../components/member/MembersModal";
 
 import { DragDropContext } from "@hello-pangea/dnd";
+import { useAuthStore } from "../store/authStore";
 
 export default function ProjectDetailPage() {
   const { id } = useParams();
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [project, setProject] = useState<any>(null); // ✅ NEW
 
   const [filter, setFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
@@ -21,19 +24,29 @@ export default function ProjectDetailPage() {
   const [toast, setToast] = useState<any>(null);
 
   const [showModal, setShowModal] = useState(false);
+  const [showMembersModal, setShowMembersModal] = useState(false);
   const [selectedTask, setSelectedTask] = useState<any>(null);
 
+  const { user } = useAuthStore();
+  
+
+  // 🔥 FETCH ALL DATA
   const fetchData = async () => {
     try {
       setLoading(true);
 
       const taskRes = await apiClient.get("/tasks");
       const userRes = await apiClient.get("/users");
+      const projectRes = await apiClient.get(`/projects/${id}`);
 
-      const filtered = taskRes.data.filter((t: any) => t.project_id === id);
+      const filtered = taskRes.data.filter(
+        (t: any) => t.project_id === id
+      );
 
       setTasks(filtered);
       setUsers(userRes.data);
+      setProject(projectRes.data); // ✅ IMPORTANT
+
     } catch {
       setToast({ message: "Failed to load data", type: "error" });
     } finally {
@@ -45,27 +58,29 @@ export default function ProjectDetailPage() {
     fetchData();
   }, [id]);
 
-  // FILTER
+  // 🔥 FILTER LOGIC
   let filteredTasks =
     filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
 
   if (assigneeFilter !== "all") {
     filteredTasks = filteredTasks.filter(
-      (t) => t.assignee_id === assigneeFilter,
+      (t) => t.assignee_id === assigneeFilter
     );
   }
 
+  // 🔥 DRAG DROP
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
     const taskId = result.draggableId;
     const newStatus = result.destination.droppableId;
 
-    // 🔥 Optimistic update
     const oldTasks = [...tasks];
 
     setTasks((prev) =>
-      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
+      prev.map((t) =>
+        t.id === taskId ? { ...t, status: newStatus } : t
+      )
     );
 
     try {
@@ -73,23 +88,24 @@ export default function ProjectDetailPage() {
         status: newStatus,
       });
     } catch {
-      setTasks(oldTasks); // rollback
+      setTasks(oldTasks);
       setToast({ message: "Update failed", type: "error" });
     }
   };
 
   return (
     <div className="app-bg min-h-screen p-4 sm:p-6 flex flex-col gap-4">
+
       {loading && <Loader />}
-
-
       {toast && <Toast message={toast.message} type={toast.type} />}
 
-      <div className="card p-4 border border-gray-200 dark:border-gray-700 flex flex-col sm:flex-row gap-3 justify-between">
-        <h1 className="text-xl sm:text-2xl font-bold">Project Tasks</h1>
+      {/* 🔥 HEADER */}
+      <div className="card p-4 border flex flex-col sm:flex-row justify-between gap-3">
+        <h1 className="text-xl font-bold">
+          {project?.name || "Project"}
+        </h1>
 
         <div className="flex gap-2 flex-wrap">
-
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
@@ -108,7 +124,7 @@ export default function ProjectDetailPage() {
           >
             <option value="all">All Users</option>
             {users.map((u) => (
-              <option key={u.id} value={u.id}>
+              <option key={u._id} value={u._id}>
                 {u.name}
               </option>
             ))}
@@ -123,25 +139,60 @@ export default function ProjectDetailPage() {
           >
             + Add Task
           </button>
+
+          {user?.role === "admin" && (
+            <button
+              onClick={() => setShowMembersModal(true)}
+              className="px-3 py-2 bg-blue-500 text-white rounded"
+            >
+              Manage Team
+            </button>
+          )}
         </div>
       </div>
 
+      {/* 🔥 MEMBERS UI */}
+      {project && (
+        <div className="card p-4 border">
+          <h2 className="font-semibold mb-3">Team Members</h2>
+
+          <div className="flex flex-wrap gap-2">
+           {project.members.map((m: any) => {
+  if (!m.user) return null; // 🔥 FIX
+
+  return (
+    <div
+      key={m.user._id}
+      className="px-3 py-1 border rounded text-sm flex items-center gap-2"
+    >
+      <span>{m.user.name}</span>
+
+      <span className="text-xs text-gray-500">
+        ({m.role})
+      </span>
+    </div>
+  );
+})}
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 TASK BOARD */}
       {filteredTasks.length === 0 && !loading && (
-        <p className="text-secondary">No tasks found</p>
+        <p>No tasks found</p>
       )}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex flex-col md:flex-row gap-4">
           {["todo", "in_progress", "done"].map((status) => (
-            <div
-              key={status}
-              className="border border-gray-200 dark:border-gray-700 rounded-xl flex-1"
-            >
+            <div key={status} className="flex-1">
               <TaskColumn
                 title={status}
                 status={status}
                 users={users}
-                tasks={filteredTasks.filter((t) => t.status === status)}
+                tasks={filteredTasks.filter(
+                  (t) => t.status === status
+                )}
                 onEdit={(task: any) => {
                   setSelectedTask(task);
                   setShowModal(true);
@@ -152,6 +203,7 @@ export default function ProjectDetailPage() {
         </div>
       </DragDropContext>
 
+      {/* 🔥 TASK MODAL */}
       {showModal && (
         <TaskModal
           projectId={id}
@@ -161,6 +213,15 @@ export default function ProjectDetailPage() {
             setSelectedTask(null);
           }}
           onSuccess={fetchData}
+        />
+      )}
+
+      {/* 🔥 MEMBERS MODAL */}
+      {showMembersModal && project && (
+        <MembersModal
+          project={project}
+          onClose={() => setShowMembersModal(false)}
+          onUpdate={fetchData}
         />
       )}
     </div>
