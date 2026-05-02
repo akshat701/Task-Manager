@@ -11,32 +11,38 @@ dotenv.config();
 
 const app = express();
 
-// ✅ FIX 1: Proper CORS config (methods + headers add kiye)
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://task-manager-frontend.vercel.app"
-  ],
-  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+// ✅ CORS (clean & stable)
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://task-manager-frontend.vercel.app"
+];
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // allow requests with no origin (postman etc.)
+    if (!origin) return callback(null, true);
+
+    if (allowedOrigins.includes(origin)) {
+      return callback(null, true);
+    } else {
+      return callback(new Error("Not allowed by CORS"));
+    }
+  },
   credentials: true
-};
-
-app.use(cors(corsOptions));
-
-// ✅ FIX 2: Preflight request handle (VERY IMPORTANT)
-app.options("*", cors(corsOptions));
+}));
 
 app.use(express.json());
 
+// ✅ health check (Railway friendly)
 app.get("/", (req, res) => {
-  res.send("API running");
+  res.status(200).send("API running 🚀");
 });
 
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
+// ✅ routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
