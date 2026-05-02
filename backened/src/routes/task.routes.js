@@ -7,7 +7,21 @@ import { allowRoles } from "../middleware/Role.js";
 const router = express.Router();
 
 
-// 🔥 helper (VERY IMPORTANT)
+// 🔥 helper: project role check
+const getUserProjectRole = (project, userId) => {
+  if (project.owner.toString() === userId) {
+    return "admin";
+  }
+
+  const member = project.members.find(
+    (m) => m.user.toString() === userId
+  );
+
+  return member?.role || null;
+};
+
+
+// 🔥 helper: response mapping (backend → frontend)
 const mapTask = (task) => ({
   ...task.toObject(),
   id: task._id,
@@ -29,29 +43,57 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       due_date,
     } = req.body;
 
+    // 🔥 validation
+    if (!project_id || !assignee_id) {
+      return res.status(400).json({
+        message: "Project and Assignee required",
+      });
+    }
+
     const proj = await Project.findById(project_id);
 
     if (!proj) {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    if (
-      proj.owner.toString() !== req.user.id &&
-      !proj.members.includes(assignee_id)
-    ) {
-      return res.status(403).json({ message: "User not in project" });
+    // 🔥 RBAC CHECK (only admin can create)
+    const role = getUserProjectRole(proj, req.user.id);
+
+    if (role !== "admin") {
+      return res.status(403).json({
+        message: "Only admin can create task",
+      });
     }
+
+    // 🔥 check assignee belongs to project
+    const isMember = proj.members.some(
+      (m) => m.user.toString() === assignee_id
+    );
+
+    if (
+      proj.owner.toString() !== assignee_id &&
+      !isMember
+    ) {
+      return res.status(403).json({
+        message: "Assignee not in project",
+      });
+    }
+
+    // 🔥 fix status mismatch
+    const finalStatus =
+      status === "in_progress" ? "in-progress" : status;
 
     const task = await Task.create({
       title,
-      status,
+      status: finalStatus,
       priority,
-      project: project_id,        // ✅ mapping
-      assignedTo: assignee_id,    // ✅ mapping
-      dueDate: due_date,          // ✅ mapping
+      project: project_id,
+      assignedTo: assignee_id,
+      dueDate: due_date,
     });
 
-    res.json(mapTask(task)); // ✅ response mapping
+    res.json(mapTask(task));
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -64,7 +106,7 @@ router.get("/", protect, async (req, res) => {
     const projects = await Project.find({
       $or: [
         { owner: req.user.id },
-        { members: req.user.id },
+        { "members.user": req.user.id }, // ✅ FIX
       ],
     });
 
@@ -74,7 +116,8 @@ router.get("/", protect, async (req, res) => {
       project: { $in: projectIds },
     });
 
-    res.json(tasks.map(mapTask)); // ✅ mapping applied
+    res.json(tasks.map(mapTask));
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -88,7 +131,8 @@ router.get("/my", protect, async (req, res) => {
       assignedTo: req.user.id,
     });
 
-    res.json(tasks.map(mapTask)); // ✅ mapping
+    res.json(tasks.map(mapTask));
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
@@ -104,6 +148,7 @@ router.patch("/:id", protect, async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
+    // 🔥 member restriction
     if (
       req.user.role === "member" &&
       task.assignedTo.toString() !== req.user.id
@@ -119,19 +164,23 @@ router.patch("/:id", protect, async (req, res) => {
       due_date,
     } = req.body;
 
+    const finalStatus =
+      status === "in_progress" ? "in-progress" : status;
+
     const updated = await Task.findByIdAndUpdate(
       req.params.id,
       {
         title,
-        status,
+        status: finalStatus,
         priority,
-        assignedTo: assignee_id, // ✅ mapping
-        dueDate: due_date,       // ✅ mapping
+        assignedTo: assignee_id,
+        dueDate: due_date,
       },
       { new: true }
     );
 
-    res.json(mapTask(updated)); // ✅ mapping
+    res.json(mapTask(updated));
+
   } catch (err) {
     res.status(500).json({ message: err.message });
   }

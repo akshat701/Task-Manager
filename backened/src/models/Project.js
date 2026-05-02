@@ -23,8 +23,15 @@ const projectSchema = new mongoose.Schema(
 
     members: [
       {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
+        user: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "User",
+        },
+        role: {
+          type: String,
+          enum: ["admin", "member"],
+          default: "member",
+        },
       },
     ],
 
@@ -33,7 +40,7 @@ const projectSchema = new mongoose.Schema(
       default: Date.now,
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 export default mongoose.model("Project", projectSchema);
