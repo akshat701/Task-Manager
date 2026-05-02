@@ -92,14 +92,14 @@ export default function TaskColumn({
                     <span className="text-xs text-gray-400 dark:text-gray-500">
                       ID: {task.id}
                     </span>
-{user.role === "admin" || task.assignee_id === user.id ? (
+
                     <button
                       onClick={() => onEdit(task)}
                       className="text-blue-500 text-sm hover:underline"
                     >
                       Edit
                     </button>
-                    ) : null}
+                   
                   </div>
                 </div>
               )}

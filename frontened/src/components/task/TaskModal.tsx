@@ -91,7 +91,7 @@ export default function TaskModal({
         >
           <option value="">Unassigned</option>
           {users.map((u) => (
-            <option key={u.id} value={u.id}>
+            <option key={u._id} value={u._id}>
               {u.name}
             </option>
           ))}

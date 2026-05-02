@@ -37,6 +37,8 @@ export default function ProjectModal({ onClose, onSuccess }: any) {
       created_at: new Date().toISOString(),
     });
 
+    
+
     onSuccess();
     onClose();
   };
@@ -78,12 +80,12 @@ export default function ProjectModal({ onClose, onSuccess }: any) {
 
           <div className="flex flex-wrap gap-2">
             {users.map((u) => {
-              const selected = selectedUsers.includes(u.id);
+              const selected = selectedUsers.includes(u._id);
 
               return (
                 <button
-                  key={u.id}
-                  onClick={() => toggleUser(u.id)}
+                  key={u._id}
+                  onClick={() => toggleUser(u._id)}
                   className={`px-3 py-1 rounded-full text-sm border transition
                     ${
                       selected

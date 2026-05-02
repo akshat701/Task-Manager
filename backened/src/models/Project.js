@@ -1,14 +1,39 @@
-// models/Project.js
 import mongoose from "mongoose";
 
-const schema = new mongoose.Schema(
+const projectSchema = new mongoose.Schema(
   {
-    name: String,
-    description: String,
-    owner: String,
-    members: [String],
+    name: {
+      type: String,
+      required: true,
+    },
+
+    description: {
+      type: String,
+      default: "",
+    },
+
+    deadline: {
+      type: Date,
+    },
+
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
+
+    members: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "User",
+      },
+    ],
+
+    created_at: {
+      type: Date,
+      default: Date.now,
+    },
   },
   { timestamps: true }
 );
 
-export default mongoose.model("Project", schema);
+export default mongoose.model("Project", projectSchema);

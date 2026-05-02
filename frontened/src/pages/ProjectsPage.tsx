@@ -44,14 +44,14 @@ export default function ProjectsPage() {
         <h1 className="text-2xl sm:text-3xl font-bold">
           Projects
         </h1>
-      {user?.role === "admin" &&
+     
         <button
           onClick={() => setShowModal(true)}
           className="button-primary w-full sm:w-auto"
         >
           + New Project
         </button>
-}
+
       </div>
 
       {projects.length === 0 && (
@@ -60,10 +60,10 @@ export default function ProjectsPage() {
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {projects.map((p) => {
-          const stats = getStats(p.id);
+          const stats = getStats(p._id);
 
           return (
-            <Link key={p.id} to={`/project/${p.id}`}>
+            <Link key={p._id} to={`/project/${p._id}`}>
               <div className="card p-4 sm:p-5 card-hover border border-gray-200 dark:border-gray-700 cursor-pointer">
 
                 <h2 className="text-base sm:text-lg font-semibold mb-1">
