@@ -1,0 +1,197 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "name": "Test User",
+      "email": "test@example.com",
+      "password": "password123"
+    },
+    {
+      "id": "2",
+      "name": "Akshat Goyal",
+      "email": "akshat@example.com",
+      "password": "123456"
+    },
+    {
+      "id": "3",
+      "name": "Rohit Sharma",
+      "email": "rohit@example.com",
+      "password": "123456"
+    },
+    {
+      "id": "4",
+      "name": "Priya Singh",
+      "email": "priya@example.com",
+      "password": "123456"
+    },
+    {
+      "id": "5",
+      "name": "Ankit Verma",
+      "email": "ankit@example.com",
+      "password": "123456"
+    }
+  ],
+  "projects": [
+    {
+      "id": "1",
+      "name": "TaskFlow Core",
+      "description": "Main product development",
+      "owner_id": "1",
+      "members": [
+        "1",
+        "2",
+        "3"
+      ],
+      "deadline": "2026-05-01",
+      "created_at": "2026-04-10T10:00:00Z"
+    },
+    {
+      "id": "2",
+      "name": "Website Redesign",
+      "description": "Improve UI/UX",
+      "owner_id": "2",
+      "members": [
+        "2",
+        "4"
+      ],
+      "deadline": "2026-05-15",
+      "created_at": "2026-04-11T09:00:00Z"
+    },
+    {
+      "id": "3",
+      "name": "Mobile App",
+      "description": "React Native app",
+      "owner_id": "3",
+      "members": [
+        "3",
+        "5"
+      ],
+      "deadline": "2026-06-01",
+      "created_at": "2026-04-12T08:00:00Z"
+    },
+    {
+      "id": "4",
+      "name": "Analytics Dashboard",
+      "description": "Admin analytics panel",
+      "owner_id": "1",
+      "members": [
+        "1",
+        "4",
+        "5"
+      ],
+      "deadline": "2026-05-25",
+      "created_at": "2026-04-12T09:00:00Z"
+    }
+  ],
+  "tasks": [
+    {
+      "id": "1",
+      "title": "Design Login UI",
+      "status": "in_progress",
+      "priority": "high",
+      "project_id": "1",
+      "assignee_id": "2",
+      "due_date": "2026-04-20",
+      "created_at": "2026-04-10T12:00:00Z"
+    },
+    {
+      "id": "2",
+      "title": "Setup Auth Logic",
+      "status": "in_progress",
+      "priority": "high",
+      "project_id": "1",
+      "assignee_id": "1",
+      "due_date": "2026-04-22",
+      "created_at": "2026-04-10T13:00:00Z"
+    },
+    {
+      "id": "3",
+      "title": "Create Project API",
+      "status": "in_progress",
+      "priority": "medium",
+      "project_id": "1",
+      "assignee_id": "3",
+      "due_date": "2026-04-18",
+      "created_at": "2026-04-11T08:00:00Z"
+    },
+    {
+      "id": "4",
+      "title": "Landing Page Design",
+      "status": "todo",
+      "priority": "high",
+      "project_id": "2",
+      "assignee_id": "4",
+      "due_date": "2026-05-01",
+      "created_at": "2026-04-11T10:00:00Z"
+    },
+    {
+      "id": "5",
+      "title": "Navbar Fix",
+      "status": "in_progress",
+      "priority": "low",
+      "project_id": "2",
+      "assignee_id": "2",
+      "due_date": "2026-04-25",
+      "created_at": "2026-04-11T11:00:00Z"
+    },
+    {
+      "id": "6",
+      "title": "Mobile UI Setup",
+      "status": "todo",
+      "priority": "high",
+      "project_id": "3",
+      "assignee_id": "5",
+      "due_date": "2026-05-10",
+      "created_at": "2026-04-12T10:00:00Z"
+    },
+    {
+      "id": "7",
+      "title": "API Integration",
+      "status": "in_progress",
+      "priority": "medium",
+      "project_id": "3",
+      "assignee_id": "3",
+      "due_date": "2026-05-15",
+      "created_at": "2026-04-12T11:00:00Z"
+    },
+    {
+      "id": "8",
+      "title": "Charts Integration",
+      "status": "in_progress",
+      "priority": "medium",
+      "project_id": "4",
+      "assignee_id": "4",
+      "due_date": "2026-05-20",
+      "created_at": "2026-04-12T12:00:00Z"
+    },
+    {
+      "id": "9",
+      "title": "Performance Optimization",
+      "status": "done",
+      "priority": "low",
+      "project_id": "4",
+      "assignee_id": "1",
+      "due_date": "2026-04-30",
+      "created_at": "2026-04-12T13:00:00Z"
+    },
+    {
+      "id": "10",
+      "title": "Bug Fixing",
+      "status": "todo",
+      "priority": "high",
+      "project_id": "1",
+      "assignee_id": "2",
+      "due_date": "2026-04-28",
+      "created_at": "2026-04-12T14:00:00Z"
+    },
+    {
+      "title": "Web Development",
+      "status": "todo",
+      "priority": "medium",
+      "project_id": "2",
+      "assignee_id": "3",
+      "due_date": "2026-04-26",
+      "id": "HewkLRV"
+    }
+  ]
+}
