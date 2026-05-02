@@ -11,13 +11,22 @@ dotenv.config();
 
 const app = express();
 
-app.use(cors({
+// ✅ FIX 1: Proper CORS config (methods + headers add kiye)
+const corsOptions = {
   origin: [
-    "http://localhost:5173", // local dev
-    "https://task-manager-frontend.vercel.app" // production frontend
+    "http://localhost:5173",
+    "https://task-manager-frontend.vercel.app"
   ],
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
   credentials: true
-}));
+};
+
+app.use(cors(corsOptions));
+
+// ✅ FIX 2: Preflight request handle (VERY IMPORTANT)
+app.options("*", cors(corsOptions));
+
 app.use(express.json());
 
 app.get("/", (req, res) => {
