@@ -3,7 +3,7 @@ import express from "express";
 import Task from "../models/Task.js";
 import Project from "../models/Project.js";
 import { protect } from "../middleware/AuthMiddleware.js";
-import { allowRoles } from "../middleware/role.js";
+import { allowRoles } from "../middleware/Role.js";
 
 const router = express.Router();
 
