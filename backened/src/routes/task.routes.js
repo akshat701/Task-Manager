@@ -21,17 +21,20 @@ const getUserProjectRole = (project, userId) => {
 };
 
 
-// 🔥 helper: response mapping (backend → frontend)
+// 🔥 helper: response mapping (VERY IMPORTANT)
 const mapTask = (task) => ({
   ...task.toObject(),
   id: task._id,
-  project_id: task.project,
+  project_id: task.project?._id || task.project,
   assignee_id: task.assignedTo,
   due_date: task.dueDate,
+  project: task.project, // 🔥 DASHBOARD FIX
 });
 
 
+// ================================
 // 🔥 CREATE TASK (ADMIN ONLY)
+// ================================
 router.post("/", protect, allowRoles("admin"), async (req, res) => {
   try {
     const {
@@ -43,7 +46,6 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       due_date,
     } = req.body;
 
-    // 🔥 validation
     if (!project_id || !assignee_id) {
       return res.status(400).json({
         message: "Project and Assignee required",
@@ -56,7 +58,6 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    // 🔥 RBAC CHECK (only admin can create)
     const role = getUserProjectRole(proj, req.user.id);
 
     if (role !== "admin") {
@@ -65,7 +66,6 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       });
     }
 
-    // 🔥 check assignee belongs to project
     const isMember = proj.members.some(
       (m) => m.user.toString() === assignee_id
     );
@@ -79,7 +79,6 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       });
     }
 
-    // 🔥 fix status mismatch
     const finalStatus =
       status === "in_progress" ? "in-progress" : status;
 
@@ -100,13 +99,15 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
 });
 
 
+// ================================
 // 🔥 GET ALL TASKS
+// ================================
 router.get("/", protect, async (req, res) => {
   try {
     const projects = await Project.find({
       $or: [
         { owner: req.user.id },
-        { "members.user": req.user.id }, // ✅ FIX
+        { "members.user": req.user.id },
       ],
     });
 
@@ -114,7 +115,7 @@ router.get("/", protect, async (req, res) => {
 
     const tasks = await Task.find({
       project: { $in: projectIds },
-    });
+    }).populate("project", "name");
 
     res.json(tasks.map(mapTask));
 
@@ -124,12 +125,15 @@ router.get("/", protect, async (req, res) => {
 });
 
 
-// 🔥 MY TASKS (Dashboard)
+// ================================
+// 🔥 MY TASKS (DASHBOARD FIX)
+// ================================
 router.get("/my", protect, async (req, res) => {
   try {
     const tasks = await Task.find({
-      assignedTo: req.user.id,
-    });
+  assignedTo: req.user.id
+}) // 🔥 MUST FIX
+    
 
     res.json(tasks.map(mapTask));
 
@@ -139,7 +143,9 @@ router.get("/my", protect, async (req, res) => {
 });
 
 
+// ================================
 // 🔥 UPDATE TASK
+// ================================
 router.patch("/:id", protect, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -148,11 +154,29 @@ router.patch("/:id", protect, async (req, res) => {
       return res.status(404).json({ message: "Task not found" });
     }
 
-    // 🔥 member restriction
-    if (
-      req.user.role === "member" &&
-      task.assignedTo.toString() !== req.user.id
-    ) {
+    const project = await Project.findById(task.project);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    // 🔥 SAFE CHECK
+    const isOwner =
+      task.assignedTo &&
+      String(task.assignedTo) === String(req.user.id);
+
+    const isAdmin =
+      project.owner &&
+      String(project.owner) === String(req.user.id) ||
+      project.members.some(
+        (m) =>
+          m?.user && // 🔥 CRITICAL FIX
+          String(m.user) === String(req.user.id) &&
+          m.role === "admin"
+      );
+
+    // 🔥 BLOCK others
+    if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
@@ -173,13 +197,13 @@ router.patch("/:id", protect, async (req, res) => {
         title,
         status: finalStatus,
         priority,
-        assignedTo: assignee_id,
+        assignedTo: assignee_id || task.assignedTo,
         dueDate: due_date,
       },
       { new: true }
-    );
+    ).populate("project", "name");
 
-    res.json(mapTask(updated));
+    res.json(updated);
 
   } catch (err) {
     res.status(500).json({ message: err.message });
@@ -187,7 +211,9 @@ router.patch("/:id", protect, async (req, res) => {
 });
 
 
+// ================================
 // 🔥 DELETE TASK
+// ================================
 router.delete("/:id", protect, allowRoles("admin"), async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id);

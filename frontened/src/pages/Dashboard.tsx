@@ -1,27 +1,50 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../api/apiClient";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
 import CreateMemberModal from "../components/member/CreateMemberModal";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
+  const [tasks, setTasks] = useState<any[]>([]);
   const [showCreateMember, setShowCreateMember] = useState(false);
 
   const { user } = useAuthStore();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const res = await apiClient.get("/dashboard/stats");
-        setStats(res.data);
-      } catch (err) {
-        console.error(err);
-      }
-    };
-
     fetchStats();
+    fetchTasks();
   }, []);
+
+  const fetchStats = async () => {
+    try {
+      const res = await apiClient.get("/dashboard/stats");
+      setStats(res.data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      const res = await apiClient.get("/tasks/my");
+      console.log("TASKS:", res.data); // 🔥 DEBUG
+      setTasks(res.data || []);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  // 🔥 GROUP TASKS BY PROJECT (SAFE)
+  const groupedTasks = tasks.reduce((acc: any, task: any) => {
+    const projectName = task?.project?.name || "No Project";
+
+    if (!acc[projectName]) acc[projectName] = [];
+    acc[projectName].push(task);
+
+    return acc;
+  }, {});
 
   if (!stats) {
     return (
@@ -34,12 +57,11 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
 
-      {/* 🔥 HEADER */}
+      {/* HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">Dashboard</h1>
 
         <div className="flex gap-2">
-          {/* ✅ ADMIN ONLY BUTTON */}
           {user?.role === "admin" && (
             <button
               onClick={() => setShowCreateMember(true)}
@@ -58,7 +80,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 📊 STATS */}
+      {/* STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
         <div className="bg-white shadow rounded-xl p-5 border">
           <p className="text-gray-500 text-sm">Total Tasks</p>
@@ -81,7 +103,66 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* ⚡ QUICK ACTIONS */}
+      {/* PROJECT-WISE TASKS */}
+      <div className="bg-white p-5 rounded-xl shadow border">
+        <h2 className="text-lg font-semibold mb-4">My Tasks</h2>
+
+        {Object.keys(groupedTasks).length === 0 && (
+          <p className="text-gray-500 text-sm">No tasks assigned</p>
+        )}
+
+        <div className="space-y-4">
+          {Object.entries(groupedTasks).map(([project, tasks]: any) => (
+            <div key={project} className="border rounded-lg p-4">
+
+              <div className="flex justify-between items-center mb-3">
+                <h3 className="font-semibold text-blue-600">
+                  {project}
+                </h3>
+
+                {/* 🔥 FIX: proper navigation */}
+                {tasks[0]?.project?._id && (
+                  <button
+                    onClick={() =>
+                      navigate(`/project/${tasks[0].project._id}`)
+                    }
+                    className="text-sm text-blue-500 hover:underline"
+                  >
+                    View Project →
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {tasks.map((task: any) => (
+                  <div
+                    key={task.id || task._id} // 🔥 FIX
+                    className="flex justify-between items-center bg-gray-50 p-2 rounded hover:bg-gray-100 transition"
+                  >
+                    <span className="text-sm font-medium">
+                      {task.title}
+                    </span>
+
+                    <span
+                      className={`text-xs px-2 py-1 rounded ${
+                        task.status === "done"
+                          ? "bg-green-100 text-green-600"
+                          : task.status === "in_progress"
+                          ? "bg-blue-100 text-blue-600"
+                          : "bg-yellow-100 text-yellow-600"
+                      }`}
+                    >
+                      {task.status}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* QUICK ACTIONS */}
       <div className="bg-white p-5 rounded-xl shadow border">
         <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
 
@@ -102,7 +183,7 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 📌 OVERVIEW */}
+      {/* OVERVIEW */}
       <div className="bg-white p-5 rounded-xl shadow border">
         <h2 className="text-lg font-semibold mb-2">Overview</h2>
 
@@ -117,7 +198,7 @@ export default function Dashboard() {
         </p>
       </div>
 
-      {/* 🔥 MODAL */}
+      {/* MODAL */}
       {showCreateMember && (
         <CreateMemberModal
           onClose={() => setShowCreateMember(false)}
