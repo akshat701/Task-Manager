@@ -14,7 +14,8 @@ const app = express();
 // ✅ CORS (clean & stable)
 const allowedOrigins = [
   "http://localhost:5173",
-  "https://task-manager-6jn1pro30-akshat-goyals-projects-df432565.vercel.app"
+  "https://task-manager-6jn1pro30-akshat-goyals-projects-df432565.vercel.app",
+  "https://task-manager-bice-tau-96.vercel.app"
 ];
 
 app.use(cors({
