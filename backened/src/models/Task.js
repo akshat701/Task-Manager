@@ -19,7 +19,6 @@ const taskSchema = new mongoose.Schema(
       default: "medium",
     },
 
-    // ✅ FIXED NAMES
     assignedTo: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

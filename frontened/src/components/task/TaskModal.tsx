@@ -17,7 +17,6 @@ export default function TaskModal({
   const [users, setUsers] = useState<any[]>([]);
   const [assignee, setAssignee] = useState(task?.assignee_id || "");
 
-  // 🔥 Fetch project members ONLY
   useEffect(() => {
     if (!projectId) return;
 
@@ -41,7 +40,6 @@ export default function TaskModal({
     fetchMembers();
   }, [projectId]);
 
-  // 🔥 Submit Handler (RBAC SAFE)
   const handleSubmit = async () => {
     if (!title.trim()) {
       alert("Title is required");
@@ -52,19 +50,15 @@ export default function TaskModal({
       if (task) {
         // 🔥 UPDATE
         await apiClient.patch(`/tasks/${task.id}`, {
-          // 👑 admin only fields
           ...(user?.role === "admin" && {
             title,
             priority,
             assignee_id: assignee,
             due_date: dueDate,
           }),
-
-          // 👤 everyone can change status
           status,
         });
       } else {
-        // 🔥 CREATE (admin only ideally, backend will check)
         await apiClient.post("/tasks", {
           title,
           status,
@@ -85,12 +79,10 @@ export default function TaskModal({
   return (
     <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
       <div className="card w-full max-w-md p-5 sm:p-6 border border-gray-200 dark:border-gray-700">
-
         <h2 className="text-lg sm:text-xl font-semibold mb-4">
           {task ? "Edit Task" : "Create Task"}
         </h2>
 
-        {/* 🔥 TITLE (ADMIN ONLY EDITABLE) */}
         {user?.role === "admin" ? (
           <input
             className="input w-full mb-3"
@@ -99,12 +91,9 @@ export default function TaskModal({
             onChange={(e) => setTitle(e.target.value)}
           />
         ) : (
-          <div className="mb-3 text-sm text-gray-700">
-            📝 {title}
-          </div>
+          <div className="mb-3 text-sm text-gray-700">📝 {title}</div>
         )}
 
-        {/* 🔥 STATUS (ALL CAN CHANGE) */}
         <select
           className="input w-full mb-3"
           value={status}
@@ -115,7 +104,6 @@ export default function TaskModal({
           <option value="done">Done</option>
         </select>
 
-        {/* 🔥 PRIORITY (ADMIN ONLY) */}
         {user?.role === "admin" && (
           <select
             className="input w-full mb-3"
@@ -128,7 +116,6 @@ export default function TaskModal({
           </select>
         )}
 
-        {/* 🔥 ASSIGNEE */}
         {user?.role === "admin" ? (
           <select
             className="input w-full mb-3"
@@ -149,7 +136,6 @@ export default function TaskModal({
           </div>
         )}
 
-        {/* 🔥 DUE DATE (ADMIN ONLY) */}
         {user?.role === "admin" && (
           <input
             type="date"
@@ -159,7 +145,6 @@ export default function TaskModal({
           />
         )}
 
-        {/* 🔥 ACTIONS */}
         <div className="flex flex-col sm:flex-row justify-end gap-2">
           <button
             onClick={onClose}
@@ -175,7 +160,6 @@ export default function TaskModal({
             {task ? "Update" : "Create"}
           </button>
         </div>
-
       </div>
     </div>
   );

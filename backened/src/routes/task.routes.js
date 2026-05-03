@@ -6,52 +6,34 @@ import { allowRoles } from "../middleware/Role.js";
 
 const router = express.Router();
 
-// ================================
-// 🔥 SAFE STRING HELPER
-// ================================
 const toStr = (val) => (val ? String(val) : "");
 
-// ================================
-// 🔥 helper: project role check
-// ================================
 const getUserProjectRole = (project, userId) => {
   if (toStr(project.owner) === toStr(userId)) {
     return "admin";
   }
 
   const member = project.members.find(
-    (m) => m?.user && toStr(m.user) === toStr(userId)
+    (m) => m?.user && toStr(m.user) === toStr(userId),
   );
 
   return member?.role || null;
 };
 
-// ================================
-// 🔥 helper: response mapping
-// ================================
 const mapTask = (task) => ({
   ...task.toObject(),
   id: task._id,
   project_id: task.project?._id || task.project,
   assignee_id: task.assignedTo?._id || task.assignedTo,
-  assignedTo: task.assignedTo, // 🔥 important for name
+  assignedTo: task.assignedTo,
   due_date: task.dueDate,
   project: task.project,
 });
 
-// ================================
-// 🔥 CREATE TASK (ADMIN ONLY)
-// ================================
 router.post("/", protect, allowRoles("admin"), async (req, res) => {
   try {
-    const {
-      title,
-      status,
-      priority,
-      project_id,
-      assignee_id,
-      due_date,
-    } = req.body;
+    const { title, status, priority, project_id, assignee_id, due_date } =
+      req.body;
 
     if (!project_id || !assignee_id) {
       return res.status(400).json({
@@ -74,13 +56,10 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
     }
 
     const isMember = proj.members.some(
-      (m) => m?.user && toStr(m.user) === toStr(assignee_id)
+      (m) => m?.user && toStr(m.user) === toStr(assignee_id),
     );
 
-    if (
-      toStr(proj.owner) !== toStr(assignee_id) &&
-      !isMember
-    ) {
+    if (toStr(proj.owner) !== toStr(assignee_id) && !isMember) {
       return res.status(403).json({
         message: "Assignee not in project",
       });
@@ -100,15 +79,11 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
       .populate("assignedTo", "name email");
 
     res.json(mapTask(populated));
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// ================================
-// 🔥 GET TASKS (RBAC + POPULATE FIX)
-// ================================
 router.get("/", protect, async (req, res) => {
   try {
     let tasks;
@@ -126,15 +101,11 @@ router.get("/", protect, async (req, res) => {
     }
 
     res.json(tasks.map(mapTask));
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// ================================
-// 🔥 MY TASKS
-// ================================
 router.get("/my", protect, async (req, res) => {
   try {
     const tasks = await Task.find({
@@ -144,15 +115,11 @@ router.get("/my", protect, async (req, res) => {
       .populate("assignedTo", "name email");
 
     res.json(tasks.map(mapTask));
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// ================================
-// 🔥 UPDATE TASK
-// ================================
 router.patch("/:id", protect, async (req, res) => {
   try {
     const task = await Task.findById(req.params.id);
@@ -167,30 +134,21 @@ router.patch("/:id", protect, async (req, res) => {
       return res.status(404).json({ message: "Project not found" });
     }
 
-    const isOwner =
-      toStr(task.assignedTo) === toStr(req.user.id);
+    const isOwner = toStr(task.assignedTo) === toStr(req.user.id);
 
     const isAdmin =
       req.user.role === "admin" ||
       toStr(project.owner) === toStr(req.user.id) ||
       project.members.some(
         (m) =>
-          m?.user &&
-          toStr(m.user) === toStr(req.user.id) &&
-          m.role === "admin"
+          m?.user && toStr(m.user) === toStr(req.user.id) && m.role === "admin",
       );
 
     if (!isOwner && !isAdmin) {
       return res.status(403).json({ message: "Not allowed" });
     }
 
-    const {
-      title,
-      status,
-      priority,
-      assignee_id,
-      due_date,
-    } = req.body;
+    const { title, status, priority, assignee_id, due_date } = req.body;
 
     const updated = await Task.findByIdAndUpdate(
       req.params.id,
@@ -201,21 +159,17 @@ router.patch("/:id", protect, async (req, res) => {
         assignedTo: assignee_id || task.assignedTo,
         dueDate: due_date,
       },
-      { new: true }
+      { new: true },
     )
       .populate("project", "name")
       .populate("assignedTo", "name email");
 
     res.json(mapTask(updated));
-
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
 });
 
-// ================================
-// 🔥 DELETE TASK
-// ================================
 router.delete("/:id", protect, allowRoles("admin"), async (req, res) => {
   try {
     await Task.findByIdAndDelete(req.params.id);

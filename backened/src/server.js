@@ -20,7 +20,6 @@ async function start() {
       console.log("Server running on port", PORT);
     });
 
-    // graceful shutdown (no crash)
     process.on("SIGTERM", () => {
       console.log("SIGTERM received. Closing server...");
       server.close(() => {

@@ -25,16 +25,12 @@ export default function Dashboard() {
   };
 
   const fetchTasks = async () => {
-    const url =
-      user?.role === "admin" ? "/tasks" : "/tasks/my";
+    const url = user?.role === "admin" ? "/tasks" : "/tasks/my";
 
     const res = await apiClient.get(url);
     setTasks(res.data || []);
   };
 
-  // ============================
-  // 🔥 GROUP BY PROJECT
-  // ============================
   const groupedTasks = tasks.reduce((acc: any, task: any) => {
     const projectName = task?.project?.name || "No Project";
 
@@ -44,9 +40,6 @@ export default function Dashboard() {
     return acc;
   }, {});
 
-  // ============================
-  // 🔥 USER STATS (NAME BASED)
-  // ============================
   const userStats = tasks.reduce((acc: any, task: any) => {
     const userName = task?.assignedTo?.name || "Unassigned";
 
@@ -66,14 +59,10 @@ export default function Dashboard() {
     return acc;
   }, {});
 
-  // 🔥 TOP PERFORMER
   const topUser = Object.entries(userStats).sort(
-    (a: any, b: any) => b[1].done - a[1].done
+    (a: any, b: any) => b[1].done - a[1].done,
   )[0]?.[0];
 
-  // ============================
-  // 🔥 PROJECT PROGRESS
-  // ============================
   const projectStats = tasks.reduce((acc: any, task: any) => {
     const project = task?.project?.name || "No Project";
 
@@ -94,20 +83,16 @@ export default function Dashboard() {
   if (!stats) {
     return (
       <div className="p-6 text-gray-500 text-center">
-          <Loader />
+        <Loader />
       </div>
     );
   }
 
   return (
     <div className="p-6 space-y-6">
-
-      {/* 🔥 HEADER */}
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">
-          {user?.role === "admin"
-            ? "Admin Dashboard"
-            : "My Dashboard"}
+          {user?.role === "admin" ? "Admin Dashboard" : "My Dashboard"}
         </h1>
 
         <div className="flex gap-2">
@@ -129,7 +114,6 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔥 STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
         <Card title="Total Tasks" value={stats.totalTasks} />
         <Card title="Completed" value={stats.completedTasks} color="green" />
@@ -137,12 +121,9 @@ export default function Dashboard() {
         <Card title="Overdue" value={stats.overdueTasks} color="red" />
       </div>
 
-      {/* 🔥 PROJECT TASKS */}
       <div className="bg-white p-5 rounded-xl shadow border">
         <h2 className="text-lg font-semibold mb-4">
-          {user?.role === "admin"
-            ? "All Tasks (Project-wise)"
-            : "My Tasks"}
+          {user?.role === "admin" ? "All Tasks (Project-wise)" : "My Tasks"}
         </h2>
 
         {Object.keys(groupedTasks).length === 0 && (
@@ -152,17 +133,12 @@ export default function Dashboard() {
         <div className="space-y-4">
           {Object.entries(groupedTasks).map(([project, tasks]: any) => (
             <div key={project} className="border rounded-lg p-4">
-
               <div className="flex justify-between items-center mb-3">
-                <h3 className="font-semibold text-blue-600">
-                  {project}
-                </h3>
+                <h3 className="font-semibold text-blue-600">{project}</h3>
 
                 {tasks[0]?.project?._id && (
                   <button
-                    onClick={() =>
-                      navigate(`/project/${tasks[0].project._id}`)
-                    }
+                    onClick={() => navigate(`/project/${tasks[0].project._id}`)}
                     className="text-sm text-blue-500 hover:underline"
                   >
                     View →
@@ -176,17 +152,15 @@ export default function Dashboard() {
                     key={task.id}
                     className="flex justify-between items-center bg-gray-50 p-2 rounded"
                   >
-                    <span className="text-sm font-medium">
-                      {task.title}
-                    </span>
+                    <span className="text-sm font-medium">{task.title}</span>
 
                     <span
                       className={`text-xs px-2 py-1 rounded ${
                         task.status === "done"
                           ? "bg-green-100 text-green-600"
                           : task.status === "in_progress"
-                          ? "bg-blue-100 text-blue-600"
-                          : "bg-yellow-100 text-yellow-600"
+                            ? "bg-blue-100 text-blue-600"
+                            : "bg-yellow-100 text-yellow-600"
                       }`}
                     >
                       {task.status}
@@ -199,18 +173,13 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* 🔥 MODERN TEAM PERFORMANCE */}
       {user?.role === "admin" && (
         <div className="bg-white p-6 rounded-2xl shadow border">
-          <h2 className="text-xl font-semibold mb-5">
-            👥 Team Performance
-          </h2>
+          <h2 className="text-xl font-semibold mb-5">👥 Team Performance</h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {Object.entries(userStats).map(([userName, data]: any) => {
-              const percent = Math.round(
-                (data.done / data.total) * 100
-              );
+              const percent = Math.round((data.done / data.total) * 100);
 
               const initials = userName
                 .split(" ")
@@ -231,9 +200,7 @@ export default function Dashboard() {
                       </div>
 
                       <div>
-                        <p className="font-semibold text-sm">
-                          {userName}
-                        </p>
+                        <p className="font-semibold text-sm">{userName}</p>
                         <p className="text-xs text-gray-500">
                           {data.total} tasks
                         </p>
@@ -266,18 +233,13 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 🔥 PROJECT PROGRESS */}
       {user?.role === "admin" && (
         <div className="bg-white p-5 rounded-xl shadow border">
-          <h2 className="text-lg font-semibold mb-4">
-            📁 Project Progress
-          </h2>
+          <h2 className="text-lg font-semibold mb-4">📁 Project Progress</h2>
 
           <div className="space-y-3">
             {Object.entries(projectStats).map(([project, data]: any) => {
-              const percent = Math.round(
-                (data.done / data.total) * 100
-              );
+              const percent = Math.round((data.done / data.total) * 100);
 
               return (
                 <div key={project}>
@@ -299,26 +261,22 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* 🔥 MODAL */}
       {showCreateMember && (
-        <CreateMemberModal
-          onClose={() => setShowCreateMember(false)}
-        />
+        <CreateMemberModal onClose={() => setShowCreateMember(false)} />
       )}
     </div>
   );
 }
 
-// 🔥 CARD
 function Card({ title, value, color }: any) {
   const bg =
     color === "green"
       ? "bg-green-100"
       : color === "yellow"
-      ? "bg-yellow-100"
-      : color === "red"
-      ? "bg-red-100"
-      : "bg-white";
+        ? "bg-yellow-100"
+        : color === "red"
+          ? "bg-red-100"
+          : "bg-white";
 
   return (
     <div className={`${bg} shadow rounded-xl p-5 border`}>

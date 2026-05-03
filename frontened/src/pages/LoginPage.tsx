@@ -36,14 +36,11 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-
-      // ✅ CORRECT API
       const res = await apiClient.post("/auth/login", {
         email,
         password,
       });
 
-      // ✅ SAVE TOKEN + USER
       setAuth(res.data.token, res.data.user);
 
       setToast({ message: "Login successful", type: "success" });
@@ -102,12 +99,12 @@ export default function LoginPage() {
           Login
         </button>
 
-        <p className="text-center text-sm text-secondary mt-4">
+        {/* <p className="text-center text-sm text-secondary mt-4">
           Don’t have an account?{" "}
           <Link to="/register" className="text-blue-500">
             Register
           </Link>
-        </p>
+        </p> */}
       </div>
     </div>
   );

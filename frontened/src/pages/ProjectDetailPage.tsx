@@ -15,7 +15,7 @@ export default function ProjectDetailPage() {
 
   const [tasks, setTasks] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
-  const [project, setProject] = useState<any>(null); // ✅ NEW
+  const [project, setProject] = useState<any>(null);
 
   const [filter, setFilter] = useState("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
@@ -28,9 +28,7 @@ export default function ProjectDetailPage() {
   const [selectedTask, setSelectedTask] = useState<any>(null);
 
   const { user } = useAuthStore();
-  
 
-  // 🔥 FETCH ALL DATA
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -39,14 +37,11 @@ export default function ProjectDetailPage() {
       const userRes = await apiClient.get("/users");
       const projectRes = await apiClient.get(`/projects/${id}`);
 
-      const filtered = taskRes.data.filter(
-        (t: any) => t.project_id === id
-      );
+      const filtered = taskRes.data.filter((t: any) => t.project_id === id);
 
       setTasks(filtered);
       setUsers(userRes.data);
-      setProject(projectRes.data); // ✅ IMPORTANT
-
+      setProject(projectRes.data);
     } catch {
       setToast({ message: "Failed to load data", type: "error" });
     } finally {
@@ -58,17 +53,15 @@ export default function ProjectDetailPage() {
     fetchData();
   }, [id]);
 
-  // 🔥 FILTER LOGIC
   let filteredTasks =
     filter === "all" ? tasks : tasks.filter((t) => t.status === filter);
 
   if (assigneeFilter !== "all") {
     filteredTasks = filteredTasks.filter(
-      (t) => t.assignee_id === assigneeFilter
+      (t) => t.assignee_id === assigneeFilter,
     );
   }
 
-  // 🔥 DRAG DROP
   const handleDragEnd = async (result: any) => {
     if (!result.destination) return;
 
@@ -78,9 +71,7 @@ export default function ProjectDetailPage() {
     const oldTasks = [...tasks];
 
     setTasks((prev) =>
-      prev.map((t) =>
-        t.id === taskId ? { ...t, status: newStatus } : t
-      )
+      prev.map((t) => (t.id === taskId ? { ...t, status: newStatus } : t)),
     );
 
     try {
@@ -95,15 +86,11 @@ export default function ProjectDetailPage() {
 
   return (
     <div className="app-bg min-h-screen p-4 sm:p-6 flex flex-col gap-4">
-
       {loading && <Loader />}
       {toast && <Toast message={toast.message} type={toast.type} />}
 
-      {/* 🔥 HEADER */}
       <div className="card p-4 border flex flex-col sm:flex-row justify-between gap-3">
-        <h1 className="text-xl font-bold">
-          {project?.name || "Project"}
-        </h1>
+        <h1 className="text-xl font-bold">{project?.name || "Project"}</h1>
 
         <div className="flex gap-2 flex-wrap">
           <select
@@ -116,65 +103,58 @@ export default function ProjectDetailPage() {
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
           </select>
-      {user?.role === "admin" && (
-          <select
-            value={assigneeFilter}
-            onChange={(e) => setAssigneeFilter(e.target.value)}
-            className="input"
-          >
-            <option value="all">All Users</option>
-            {users.map((u) => (
-              <option key={u._id} value={u._id}>
-                {u.name}
-              </option>
-            ))}
-          </select>
-    
- )}
-  {user?.role === "admin" && (
-          <button
-            onClick={() => {
-              setSelectedTask(null);
-              setShowModal(true);
-            }}
-            className="button-primary"
-          >
-            + Add Task
-          </button>
-  )}
+          {user?.role === "admin" && (
+            <select
+              value={assigneeFilter}
+              onChange={(e) => setAssigneeFilter(e.target.value)}
+              className="input"
+            >
+              <option value="all">All Users</option>
+              {users.map((u) => (
+                <option key={u._id} value={u._id}>
+                  {u.name}
+                </option>
+              ))}
+            </select>
+          )}
+          {user?.role === "admin" && (
+            <button
+              onClick={() => {
+                setSelectedTask(null);
+                setShowModal(true);
+              }}
+              className="button-primary"
+            >
+              + Add Task
+            </button>
+          )}
         </div>
       </div>
 
-      {/* 🔥 MEMBERS UI */}
       {project && (
         <div className="card p-4 border">
           <h2 className="font-semibold mb-3">Team Members</h2>
 
           <div className="flex flex-wrap gap-2">
-           {project.members.map((m: any) => {
-  if (!m.user) return null; // 🔥 FIX
+            {project.members.map((m: any) => {
+              if (!m.user) return null;
 
-  return (
-    <div
-      key={m.user._id}
-      className="px-3 py-1 border rounded text-sm flex items-center gap-2"
-    >
-      <span>{m.user.name}</span>
+              return (
+                <div
+                  key={m.user._id}
+                  className="px-3 py-1 border rounded text-sm flex items-center gap-2"
+                >
+                  <span>{m.user.name}</span>
 
-      <span className="text-xs text-gray-500">
-        ({m.role})
-      </span>
-    </div>
-  );
-})}
+                  <span className="text-xs text-gray-500">({m.role})</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}
 
-      {/* 🔥 TASK BOARD */}
-      {filteredTasks.length === 0 && !loading && (
-        <p>No tasks found</p>
-      )}
+      {filteredTasks.length === 0 && !loading && <p>No tasks found</p>}
 
       <DragDropContext onDragEnd={handleDragEnd}>
         <div className="flex flex-col md:flex-row gap-4">
@@ -184,9 +164,7 @@ export default function ProjectDetailPage() {
                 title={status}
                 status={status}
                 users={users}
-                tasks={filteredTasks.filter(
-                  (t) => t.status === status
-                )}
+                tasks={filteredTasks.filter((t) => t.status === status)}
                 onEdit={(task: any) => {
                   setSelectedTask(task);
                   setShowModal(true);
@@ -197,7 +175,6 @@ export default function ProjectDetailPage() {
         </div>
       </DragDropContext>
 
-      {/* 🔥 TASK MODAL */}
       {showModal && (
         <TaskModal
           projectId={id}
@@ -210,7 +187,6 @@ export default function ProjectDetailPage() {
         />
       )}
 
-      {/* 🔥 MEMBERS MODAL */}
       {showMembersModal && project && (
         <MembersModal
           project={project}

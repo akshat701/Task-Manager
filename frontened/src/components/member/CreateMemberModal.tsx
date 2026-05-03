@@ -57,7 +57,6 @@ export default function CreateMemberModal({ onClose }: any) {
       {toast && <Toast message={toast.message} type={toast.type} />}
       <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 z-50">
         <div className="bg-white dark:bg-gray-900 p-6 rounded-2xl w-full max-w-md shadow-xl space-y-4">
-          {/* HEADER */}
           <div className="flex justify-between items-center">
             <h2 className="text-lg font-semibold">Add Team Member</h2>
             <button
@@ -68,14 +67,12 @@ export default function CreateMemberModal({ onClose }: any) {
             </button>
           </div>
 
-          {/* ERROR */}
           {error && (
             <div className="text-sm text-red-500 bg-red-50 p-2 rounded">
               {error}
             </div>
           )}
 
-          {/* PROJECT */}
           <select
             value={projectId}
             onChange={(e) => setProjectId(e.target.value)}
@@ -93,7 +90,6 @@ export default function CreateMemberModal({ onClose }: any) {
             )}
           </select>
 
-          {/* FORM */}
           <input
             placeholder="Full Name"
             value={name}
@@ -125,7 +121,6 @@ export default function CreateMemberModal({ onClose }: any) {
             <option value="admin">Admin</option>
           </select>
 
-          {/* ACTION */}
           <button
             onClick={handleSubmit}
             disabled={loading}
@@ -134,7 +129,6 @@ export default function CreateMemberModal({ onClose }: any) {
             {loading ? "Adding Member..." : "Add Member"}
           </button>
 
-          {/* FOOTER */}
           <button
             onClick={onClose}
             className="w-full text-sm text-gray-500 hover:text-red-500"

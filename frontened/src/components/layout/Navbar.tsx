@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
 import { useAuthStore } from "../../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 export default function Navbar() {
   const { user, logout } = useAuthStore();
   const [open, setOpen] = useState(false);
   const [dark, setDark] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const saved = localStorage.getItem("theme");
@@ -33,13 +35,14 @@ export default function Navbar() {
 
   return (
     <div className="h-16 bg-white dark:bg-gray-900 border-b flex items-center justify-between px-6 relative">
-      <h1 className="font-semibold text-lg text-gray-800 dark:text-white">
+      <h1
+        onClick={() => navigate("/")}
+        className="font-semibold text-lg text-gray-800 dark:text-white cursor-pointer"
+      >
         TaskFlow
       </h1>
 
-
       <div className="relative">
-
         <div
           onClick={() => setOpen(!open)}
           className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center cursor-pointer font-semibold"
@@ -49,13 +52,10 @@ export default function Navbar() {
 
         {open && (
           <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 shadow-lg rounded-xl p-4 z-50">
-
             <p className="font-medium text-gray-800 dark:text-white">
               {user?.name || "User"}
             </p>
-            <p className="text-sm text-gray-500 mb-4">
-              {user?.email}
-            </p>
+            <p className="text-sm text-gray-500 mb-4">{user?.email}</p>
 
             <div className="flex items-center justify-between mb-4">
               <span className="text-sm text-gray-700 dark:text-gray-300">

@@ -11,7 +11,6 @@ dotenv.config();
 
 const app = express();
 
-// ✅ CORS (clean & stable)
 const allowedOrigins = [
   "http://localhost:5173",
   "https://task-manager-6jn1pro30-akshat-goyals-projects-df432565.vercel.app",
@@ -20,7 +19,6 @@ const allowedOrigins = [
 
 app.use(cors({
   origin: function (origin, callback) {
-    // allow requests with no origin (postman etc.)
     if (!origin) return callback(null, true);
 
     if (allowedOrigins.includes(origin)) {
@@ -34,7 +32,6 @@ app.use(cors({
 
 app.use(express.json());
 
-// ✅ health check (Railway friendly)
 app.get("/", (req, res) => {
   res.status(200).send("API running 🚀");
 });
@@ -43,7 +40,6 @@ app.get("/health", (req, res) => {
   res.status(200).json({ status: "ok" });
 });
 
-// ✅ routes
 app.use("/api/auth", authRoutes);
 app.use("/api/tasks", taskRoutes);
 app.use("/api/projects", projectRoutes);
