@@ -35,9 +35,33 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
   }
 });
 
-// ================================
-// 🔥 UPDATE PROJECT
-// ================================
+router.patch("/members/remove", protect, allowRoles("admin"), async (req, res) => {
+  try {
+    const { projectId, userId } = req.body;
+
+    if (!projectId || !userId) {
+      return res.status(400).json({ message: "Missing data" });
+    }
+
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    project.members = project.members.filter(
+      (m) => m?.user && m.user.toString() !== userId
+    );
+
+    await project.save();
+
+    res.json(project);
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 router.patch("/:id", protect, async (req, res) => {
   try {
     const { name, description, deadline } = req.body;
@@ -225,19 +249,7 @@ router.post("/add-new-member", protect, allowRoles("admin"), async (req, res) =>
   }
 });
 
-router.patch("/remove-member", protect, allowRoles("admin"), async (req, res) => {
-  const { projectId, userId } = req.body;
 
-  const project = await Project.findById(projectId);
-
-  project.members = project.members.filter(
-    (m) => m.user.toString() !== userId
-  );
-
-  await project.save();
-
-  res.json(project);
-});
 
 
 export default router;

@@ -2,11 +2,13 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api/apiClient";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuthStore } from "../store/authStore";
+import Loader from "../components/common/Loader";
 import CreateMemberModal from "../components/member/CreateMemberModal";
 
 export default function Dashboard() {
   const [stats, setStats] = useState<any>(null);
   const [tasks, setTasks] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
   const [showCreateMember, setShowCreateMember] = useState(false);
 
   const { user } = useAuthStore();
@@ -92,7 +94,7 @@ export default function Dashboard() {
   if (!stats) {
     return (
       <div className="p-6 text-gray-500 text-center">
-        Loading dashboard...
+          <Loader />
       </div>
     );
   }

@@ -5,122 +5,153 @@ export default function EditProjectModal({ project, onClose, onSuccess }: any) {
   const [name, setName] = useState(project.name);
   const [description, setDescription] = useState(project.description);
   const [deadline, setDeadline] = useState(
-    project.deadline?.slice(0, 10) || ""
+    project.deadline?.slice(0, 10) || "",
   );
 
   const [allUsers, setAllUsers] = useState<any[]>([]);
   const [members, setMembers] = useState<any[]>(project.members || []);
+  const [loading, setLoading] = useState(false);
 
-  // 🔥 fetch all users (for adding)
   useEffect(() => {
     apiClient.get("/users").then((res) => {
       setAllUsers(res.data || []);
     });
   }, []);
 
-  // 🔥 ADD MEMBER
-  const handleAddMember = async (userId: string) => {
-    await apiClient.post("/projects/add-member", {
-      projectId: project._id,
-      userId,
-      role: "member",
-    });
+  const handleAddMember = async (user: any) => {
+    try {
+      setLoading(true);
 
-    onSuccess();
+      await apiClient.post("/projects/add-member", {
+        projectId: project._id,
+        userId: user._id,
+        role: "member",
+      });
+
+      setMembers((prev) => [...prev, { user }]);
+    } finally {
+      setLoading(false);
+      onSuccess();
+    }
   };
 
-  // 🔥 REMOVE MEMBER
   const handleRemoveMember = async (userId: string) => {
-    await apiClient.patch("/projects/remove-member", {
-      projectId: project._id,
-      userId,
-    });
+    try {
+      setLoading(true);
 
-    onSuccess();
+      await apiClient.patch("/projects/members/remove", {
+        projectId: project._id,
+        userId,
+      });
+
+      setMembers((prev) => prev.filter((m) => m.user._id !== userId));
+    } finally {
+      setLoading(false);
+      onSuccess();
+    }
   };
 
-  // 🔥 UPDATE PROJECT
   const handleUpdate = async () => {
-    await apiClient.patch(`/projects/${project._id}`, {
-      name,
-      description,
-      deadline,
-    });
+    try {
+      setLoading(true);
 
-    onSuccess();
-    onClose();
+      await apiClient.patch(`/projects/${project._id}`, {
+        name,
+        description,
+        deadline,
+      });
+
+      onSuccess();
+      onClose();
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
-    <div className="fixed inset-0 bg-black/40 flex items-center justify-center p-4">
-      <div className="bg-white p-6 rounded-xl w-full max-w-lg space-y-4">
+    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="bg-white p-6 rounded-2xl w-full max-w-xl shadow-lg space-y-5">
+        <h2 className="text-2xl font-bold text-gray-800">Edit Project</h2>
 
-        <h2 className="text-xl font-bold">Edit Project</h2>
+        <div className="space-y-3">
+          <input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="Project Name"
+            className="w-full border p-2 rounded-lg"
+          />
 
-        {/* 🔥 BASIC INFO */}
-        <input
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="input w-full"
-        />
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="Description"
+            className="w-full border p-2 rounded-lg"
+          />
 
-        <textarea
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-          className="input w-full"
-        />
+          <input
+            type="date"
+            value={deadline}
+            onChange={(e) => setDeadline(e.target.value)}
+            className="w-full border p-2 rounded-lg"
+          />
+        </div>
 
-        <input
-          type="date"
-          value={deadline}
-          onChange={(e) => setDeadline(e.target.value)}
-          className="input w-full"
-        />
-
-        {/* 🔥 CURRENT MEMBERS */}
         <div>
-          <h3 className="font-semibold mb-2">Members</h3>
+          <h3 className="font-semibold mb-2 text-gray-700">Members</h3>
 
-          {members.map((m: any) => (
-            <div key={m.user._id} className="flex justify-between mb-2">
-              <span>{m.user.name}</span>
-
-              <button
-                onClick={() => handleRemoveMember(m.user._id)}
-                className="text-red-500 text-sm"
+          <div className="space-y-2 max-h-32 overflow-y-auto">
+            {members.map((m: any) => (
+              <div
+                key={m.user._id}
+                className="flex justify-between items-center bg-gray-100 px-3 py-2 rounded-lg"
               >
-                Remove
-              </button>
-            </div>
-          ))}
+                <span>{m.user.name}</span>
+
+                <button
+                  onClick={() => handleRemoveMember(m.user._id)}
+                  className="text-red-500 hover:text-red-700 text-sm"
+                >
+                  Remove
+                </button>
+              </div>
+            ))}
+          </div>
         </div>
 
-        {/* 🔥 ADD MEMBER */}
         <div>
-          <h3 className="font-semibold mb-2">Add Member</h3>
+          <h3 className="font-semibold mb-2 text-gray-700">Add Member</h3>
 
-          {allUsers.map((u) => (
-            <button
-              key={u._id}
-              onClick={() => handleAddMember(u._id)}
-              className="text-blue-500 text-sm mr-2"
-            >
-              {u.name}
-            </button>
-          ))}
+          <div className="flex flex-wrap gap-2 max-h-28 overflow-y-auto">
+            {allUsers
+              .filter((u) => !members.find((m) => m.user._id === u._id))
+              .map((u) => (
+                <button
+                  key={u._id}
+                  onClick={() => handleAddMember(u)}
+                  className="bg-blue-100 text-blue-600 px-3 py-1 rounded-full text-sm hover:bg-blue-200"
+                >
+                  + {u.name}
+                </button>
+              ))}
+          </div>
         </div>
 
-        {/* 🔥 ACTION */}
-        <div className="flex justify-end gap-2">
-          <button onClick={onClose} className="button-secondary">
+        <div className="flex justify-end gap-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 rounded-lg border text-gray-600 hover:bg-gray-100"
+          >
             Cancel
           </button>
 
-          <button onClick={handleUpdate} className="button-primary">
-            Update
+          <button
+            onClick={handleUpdate}
+            disabled={loading}
+            className="px-4 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            {loading ? "Updating..." : "Update"}
           </button>
         </div>
-
       </div>
     </div>
   );
