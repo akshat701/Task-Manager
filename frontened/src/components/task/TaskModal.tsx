@@ -14,8 +14,13 @@ export default function TaskModal({
   const [status, setStatus] = useState(task?.status || "todo");
   const [priority, setPriority] = useState(task?.priority || "medium");
   const [dueDate, setDueDate] = useState(task?.due_date || "");
+
+  // 🔥 FIX: assignee safe extraction
+  const [assignee, setAssignee] = useState(
+    task?.assignee_id?._id || task?.assignee_id || ""
+  );
+
   const [users, setUsers] = useState<any[]>([]);
-  const [assignee, setAssignee] = useState(task?.assignee_id || "");
 
   useEffect(() => {
     if (!projectId) return;
@@ -23,13 +28,15 @@ export default function TaskModal({
     const fetchMembers = async () => {
       try {
         const res = await apiClient.get(`/projects/${projectId}`);
-
         const members = res.data.members || [];
 
-        const formatted = members.map((m: any) => ({
-          _id: m.user._id,
-          name: m.user.name,
-        }));
+        // 🔥 FIX: null users filter
+        const formatted = members
+          .filter((m: any) => m.user)
+          .map((m: any) => ({
+            _id: String(m.user._id),
+            name: m.user.name,
+          }));
 
         setUsers(formatted);
       } catch (err) {
@@ -40,6 +47,11 @@ export default function TaskModal({
     fetchMembers();
   }, [projectId]);
 
+  // 🔥 FIX: safe match
+  const assignedUser = users.find(
+    (u) => String(u._id) === String(assignee)
+  );
+
   const handleSubmit = async () => {
     if (!title.trim()) {
       alert("Title is required");
@@ -48,12 +60,11 @@ export default function TaskModal({
 
     try {
       if (task) {
-        // 🔥 UPDATE
         await apiClient.patch(`/tasks/${task.id}`, {
           ...(user?.role === "admin" && {
             title,
             priority,
-            assignee_id: assignee,
+            assignee_id: assignee || null,
             due_date: dueDate,
           }),
           status,
@@ -64,7 +75,7 @@ export default function TaskModal({
           status,
           priority,
           project_id: projectId,
-          assignee_id: assignee,
+          assignee_id: assignee || null,
           due_date: dueDate,
         });
       }
@@ -83,6 +94,7 @@ export default function TaskModal({
           {task ? "Edit Task" : "Create Task"}
         </h2>
 
+        {/* TITLE */}
         {user?.role === "admin" ? (
           <input
             className="input w-full mb-3"
@@ -94,6 +106,7 @@ export default function TaskModal({
           <div className="mb-3 text-sm text-gray-700">📝 {title}</div>
         )}
 
+        {/* STATUS */}
         <select
           className="input w-full mb-3"
           value={status}
@@ -104,6 +117,7 @@ export default function TaskModal({
           <option value="done">Done</option>
         </select>
 
+        {/* PRIORITY */}
         {user?.role === "admin" && (
           <select
             className="input w-full mb-3"
@@ -116,6 +130,7 @@ export default function TaskModal({
           </select>
         )}
 
+        {/* ASSIGNEE */}
         {user?.role === "admin" ? (
           <select
             className="input w-full mb-3"
@@ -131,11 +146,11 @@ export default function TaskModal({
           </select>
         ) : (
           <div className="mb-3 text-sm text-gray-600">
-            👤 Assigned to:{" "}
-            {users.find((u) => u._id === assignee)?.name || "You"}
+            👤 Assigned to: {assignedUser?.name || "Unassigned"}
           </div>
         )}
 
+        {/* DUE DATE */}
         {user?.role === "admin" && (
           <input
             type="date"
@@ -145,6 +160,7 @@ export default function TaskModal({
           />
         )}
 
+        {/* ACTIONS */}
         <div className="flex flex-col sm:flex-row justify-end gap-2">
           <button
             onClick={onClose}
