@@ -116,7 +116,7 @@ export default function ProjectDetailPage() {
             <option value="in_progress">In Progress</option>
             <option value="done">Done</option>
           </select>
-
+      {user?.role === "admin" && (
           <select
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
@@ -129,7 +129,9 @@ export default function ProjectDetailPage() {
               </option>
             ))}
           </select>
-
+    
+ )}
+  {user?.role === "admin" && (
           <button
             onClick={() => {
               setSelectedTask(null);
@@ -139,15 +141,7 @@ export default function ProjectDetailPage() {
           >
             + Add Task
           </button>
-
-          {user?.role === "admin" && (
-            <button
-              onClick={() => setShowMembersModal(true)}
-              className="px-3 py-2 bg-blue-500 text-white rounded"
-            >
-              Manage Team
-            </button>
-          )}
+  )}
         </div>
       </div>
 

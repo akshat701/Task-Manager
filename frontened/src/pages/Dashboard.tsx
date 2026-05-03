@@ -18,30 +18,73 @@ export default function Dashboard() {
   }, []);
 
   const fetchStats = async () => {
-    try {
-      const res = await apiClient.get("/dashboard/stats");
-      setStats(res.data);
-    } catch (err) {
-      console.error(err);
-    }
+    const res = await apiClient.get("/dashboard/stats");
+    setStats(res.data);
   };
 
   const fetchTasks = async () => {
-    try {
-      const res = await apiClient.get("/tasks/my");
-      console.log("TASKS:", res.data); // 🔥 DEBUG
-      setTasks(res.data || []);
-    } catch (err) {
-      console.error(err);
-    }
+    const url =
+      user?.role === "admin" ? "/tasks" : "/tasks/my";
+
+    const res = await apiClient.get(url);
+    setTasks(res.data || []);
   };
 
-  // 🔥 GROUP TASKS BY PROJECT (SAFE)
+  // ============================
+  // 🔥 GROUP BY PROJECT
+  // ============================
   const groupedTasks = tasks.reduce((acc: any, task: any) => {
     const projectName = task?.project?.name || "No Project";
 
     if (!acc[projectName]) acc[projectName] = [];
     acc[projectName].push(task);
+
+    return acc;
+  }, {});
+
+  // ============================
+  // 🔥 USER STATS (NAME BASED)
+  // ============================
+  const userStats = tasks.reduce((acc: any, task: any) => {
+    const userName = task?.assignedTo?.name || "Unassigned";
+
+    if (!acc[userName]) {
+      acc[userName] = {
+        total: 0,
+        done: 0,
+        pending: 0,
+      };
+    }
+
+    acc[userName].total++;
+
+    if (task.status === "done") acc[userName].done++;
+    else acc[userName].pending++;
+
+    return acc;
+  }, {});
+
+  // 🔥 TOP PERFORMER
+  const topUser = Object.entries(userStats).sort(
+    (a: any, b: any) => b[1].done - a[1].done
+  )[0]?.[0];
+
+  // ============================
+  // 🔥 PROJECT PROGRESS
+  // ============================
+  const projectStats = tasks.reduce((acc: any, task: any) => {
+    const project = task?.project?.name || "No Project";
+
+    if (!acc[project]) {
+      acc[project] = {
+        total: 0,
+        done: 0,
+      };
+    }
+
+    acc[project].total++;
+
+    if (task.status === "done") acc[project].done++;
 
     return acc;
   }, {});
@@ -57,58 +100,51 @@ export default function Dashboard() {
   return (
     <div className="p-6 space-y-6">
 
-      {/* HEADER */}
+      {/* 🔥 HEADER */}
       <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
+        <h1 className="text-2xl font-bold">
+          {user?.role === "admin"
+            ? "Admin Dashboard"
+            : "My Dashboard"}
+        </h1>
 
         <div className="flex gap-2">
           {user?.role === "admin" && (
             <button
               onClick={() => setShowCreateMember(true)}
-              className="bg-green-600 text-white px-4 py-2 rounded hover:bg-green-700"
+              className="bg-green-600 text-white px-4 py-2 rounded"
             >
               + Add Member
             </button>
           )}
 
           <Link
-            to="/"
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+            to="/project"
+            className="bg-blue-500 text-white px-4 py-2 rounded"
           >
-            Go to Projects
+            Projects
           </Link>
         </div>
       </div>
 
-      {/* STATS */}
+      {/* 🔥 STATS */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-5">
-        <div className="bg-white shadow rounded-xl p-5 border">
-          <p className="text-gray-500 text-sm">Total Tasks</p>
-          <h2 className="text-2xl font-bold mt-2">{stats.totalTasks}</h2>
-        </div>
-
-        <div className="bg-green-100 shadow rounded-xl p-5 border">
-          <p className="text-sm">Completed</p>
-          <h2 className="text-2xl font-bold mt-2">{stats.completedTasks}</h2>
-        </div>
-
-        <div className="bg-yellow-100 shadow rounded-xl p-5 border">
-          <p className="text-sm">Pending</p>
-          <h2 className="text-2xl font-bold mt-2">{stats.pendingTasks}</h2>
-        </div>
-
-        <div className="bg-red-100 shadow rounded-xl p-5 border">
-          <p className="text-sm">Overdue</p>
-          <h2 className="text-2xl font-bold mt-2">{stats.overdueTasks}</h2>
-        </div>
+        <Card title="Total Tasks" value={stats.totalTasks} />
+        <Card title="Completed" value={stats.completedTasks} color="green" />
+        <Card title="Pending" value={stats.pendingTasks} color="yellow" />
+        <Card title="Overdue" value={stats.overdueTasks} color="red" />
       </div>
 
-      {/* PROJECT-WISE TASKS */}
+      {/* 🔥 PROJECT TASKS */}
       <div className="bg-white p-5 rounded-xl shadow border">
-        <h2 className="text-lg font-semibold mb-4">My Tasks</h2>
+        <h2 className="text-lg font-semibold mb-4">
+          {user?.role === "admin"
+            ? "All Tasks (Project-wise)"
+            : "My Tasks"}
+        </h2>
 
         {Object.keys(groupedTasks).length === 0 && (
-          <p className="text-gray-500 text-sm">No tasks assigned</p>
+          <p className="text-gray-500 text-sm">No tasks found</p>
         )}
 
         <div className="space-y-4">
@@ -120,7 +156,6 @@ export default function Dashboard() {
                   {project}
                 </h3>
 
-                {/* 🔥 FIX: proper navigation */}
                 {tasks[0]?.project?._id && (
                   <button
                     onClick={() =>
@@ -128,7 +163,7 @@ export default function Dashboard() {
                     }
                     className="text-sm text-blue-500 hover:underline"
                   >
-                    View Project →
+                    View →
                   </button>
                 )}
               </div>
@@ -136,8 +171,8 @@ export default function Dashboard() {
               <div className="space-y-2">
                 {tasks.map((task: any) => (
                   <div
-                    key={task.id || task._id} // 🔥 FIX
-                    className="flex justify-between items-center bg-gray-50 p-2 rounded hover:bg-gray-100 transition"
+                    key={task.id}
+                    className="flex justify-between items-center bg-gray-50 p-2 rounded"
                   >
                     <span className="text-sm font-medium">
                       {task.title}
@@ -162,48 +197,131 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* QUICK ACTIONS */}
-      <div className="bg-white p-5 rounded-xl shadow border">
-        <h2 className="text-lg font-semibold mb-3">Quick Actions</h2>
+      {/* 🔥 MODERN TEAM PERFORMANCE */}
+      {user?.role === "admin" && (
+        <div className="bg-white p-6 rounded-2xl shadow border">
+          <h2 className="text-xl font-semibold mb-5">
+            👥 Team Performance
+          </h2>
 
-        <div className="flex gap-4 flex-wrap">
-          <Link
-            to="/"
-            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-          >
-            View Projects
-          </Link>
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {Object.entries(userStats).map(([userName, data]: any) => {
+              const percent = Math.round(
+                (data.done / data.total) * 100
+              );
 
-          <Link
-            to="/"
-            className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-          >
-            Create Task
-          </Link>
+              const initials = userName
+                .split(" ")
+                .map((w: string) => w[0])
+                .join("")
+                .toUpperCase()
+                .slice(0, 2);
+
+              return (
+                <div
+                  key={userName}
+                  className="bg-gray-50 border rounded-xl p-4 hover:shadow-md transition"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-full bg-blue-500 text-white flex items-center justify-center font-semibold">
+                        {initials}
+                      </div>
+
+                      <div>
+                        <p className="font-semibold text-sm">
+                          {userName}
+                        </p>
+                        <p className="text-xs text-gray-500">
+                          {data.total} tasks
+                        </p>
+                      </div>
+                    </div>
+
+                    {userName === topUser && (
+                      <span className="text-xs bg-green-100 text-green-600 px-2 py-1 rounded">
+                        Top
+                      </span>
+                    )}
+                  </div>
+
+                  <div className="w-full bg-gray-200 h-2 rounded mb-3">
+                    <div
+                      className="bg-green-500 h-2 rounded"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+
+                  <div className="flex justify-between text-xs">
+                    <span>📊 {data.total}</span>
+                    <span className="text-green-600">✔ {data.done}</span>
+                    <span className="text-yellow-600">⏳ {data.pending}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
-      </div>
+      )}
 
-      {/* OVERVIEW */}
-      <div className="bg-white p-5 rounded-xl shadow border">
-        <h2 className="text-lg font-semibold mb-2">Overview</h2>
+      {/* 🔥 PROJECT PROGRESS */}
+      {user?.role === "admin" && (
+        <div className="bg-white p-5 rounded-xl shadow border">
+          <h2 className="text-lg font-semibold mb-4">
+            📁 Project Progress
+          </h2>
 
-        <p className="text-gray-600">
-          You have{" "}
-          <span className="font-semibold">{stats.pendingTasks}</span>{" "}
-          pending tasks and{" "}
-          <span className="font-semibold text-red-500">
-            {stats.overdueTasks}
-          </span>{" "}
-          overdue tasks.
-        </p>
-      </div>
+          <div className="space-y-3">
+            {Object.entries(projectStats).map(([project, data]: any) => {
+              const percent = Math.round(
+                (data.done / data.total) * 100
+              );
 
-      {/* MODAL */}
+              return (
+                <div key={project}>
+                  <div className="flex justify-between text-sm mb-1">
+                    <span>{project}</span>
+                    <span>{percent}%</span>
+                  </div>
+
+                  <div className="w-full bg-gray-200 h-2 rounded">
+                    <div
+                      className="bg-green-500 h-2 rounded"
+                      style={{ width: `${percent}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* 🔥 MODAL */}
       {showCreateMember && (
         <CreateMemberModal
           onClose={() => setShowCreateMember(false)}
         />
       )}
+    </div>
+  );
+}
+
+// 🔥 CARD
+function Card({ title, value, color }: any) {
+  const bg =
+    color === "green"
+      ? "bg-green-100"
+      : color === "yellow"
+      ? "bg-yellow-100"
+      : color === "red"
+      ? "bg-red-100"
+      : "bg-white";
+
+  return (
+    <div className={`${bg} shadow rounded-xl p-5 border`}>
+      <p className="text-sm">{title}</p>
+      <h2 className="text-2xl font-bold mt-2">{value}</h2>
     </div>
   );
 }

@@ -35,6 +35,37 @@ router.post("/", protect, allowRoles("admin"), async (req, res) => {
   }
 });
 
+// ================================
+// 🔥 UPDATE PROJECT
+// ================================
+router.patch("/:id", protect, async (req, res) => {
+  try {
+    const { name, description, deadline } = req.body;
+
+    const project = await Project.findById(req.params.id);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    // 🔥 only owner/admin
+    if (project.owner.toString() !== req.user.id) {
+      return res.status(403).json({ message: "Not allowed" });
+    }
+
+    const updated = await Project.findByIdAndUpdate(
+      req.params.id,
+      { name, description, deadline },
+      { new: true }
+    );
+
+    res.json(updated);
+
+  } catch (err) {
+    res.status(500).json({ message: err.message });
+  }
+});
+
 
 // ================================
 // 🔥 GET PROJECTS
@@ -192,6 +223,20 @@ router.post("/add-new-member", protect, allowRoles("admin"), async (req, res) =>
   } catch (err) {
     res.status(500).json({ message: err.message });
   }
+});
+
+router.patch("/remove-member", protect, allowRoles("admin"), async (req, res) => {
+  const { projectId, userId } = req.body;
+
+  const project = await Project.findById(projectId);
+
+  project.members = project.members.filter(
+    (m) => m.user.toString() !== userId
+  );
+
+  await project.save();
+
+  res.json(project);
 });
 
 

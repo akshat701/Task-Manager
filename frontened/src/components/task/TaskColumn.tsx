@@ -25,7 +25,7 @@ export default function TaskColumn({
   const {user} = useAuthStore();
 
   const getUserName = (id: string) => {
-    const user = users.find((u: any) => u.id === id);
+    const user = users.find((u: any) => u._id === id);
     return user ? user.name : "Unknown";
   };
 

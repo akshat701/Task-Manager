@@ -1,7 +1,8 @@
 import axios from "axios";
 //https://task-manager-x57a.onrender.com/api
+//http://localhost:5000/api
 export const apiClient = axios.create({
-  baseURL: "http://localhost:5000/api",
+  baseURL: "https://task-manager-x57a.onrender.com/api",
     withCredentials: true
 });
 

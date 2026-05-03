@@ -2,26 +2,34 @@ import { useEffect, useState } from "react";
 import { apiClient } from "../api/apiClient";
 import { Link } from "react-router-dom";
 import ProjectModal from "../components/project/ProjectModal";
+import EditProjectModal from "../components/project/EditProjectModal"; // ✅ ADD
 import { useAuthStore } from "../store/authStore";
 
 export default function ProjectsPage() {
   const [projects, setProjects] = useState<any[]>([]);
   const [tasks, setTasks] = useState<any[]>([]);
   const [showModal, setShowModal] = useState(false);
+  const [editProject, setEditProject] = useState<any>(null); // ✅ ADD
+
   const { user } = useAuthStore();
 
   const fetchData = async () => {
-    const projRes = await apiClient.get("/projects");
-    const taskRes = await apiClient.get("/tasks");
+    try {
+      const projRes = await apiClient.get("/projects");
+      const taskRes = await apiClient.get("/tasks");
 
-    setProjects(projRes.data);
-    setTasks(taskRes.data);
+      setProjects(projRes.data || []);
+      setTasks(taskRes.data || []);
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   useEffect(() => {
     fetchData();
   }, []);
 
+  // 🔥 PROJECT STATS
   const getStats = (projectId: string) => {
     const projectTasks = tasks.filter(
       (t) => t.project_id === projectId
@@ -31,7 +39,7 @@ export default function ProjectsPage() {
       total: projectTasks.length,
       todo: projectTasks.filter((t) => t.status === "todo").length,
       inProgress: projectTasks.filter(
-        (t) => t.status === "in_progress"
+        (t) => t.status === "in_progress" || t.status === "in-progress"
       ).length,
       done: projectTasks.filter((t) => t.status === "done").length,
     };
@@ -40,32 +48,49 @@ export default function ProjectsPage() {
   return (
     <div className="app-bg min-h-screen p-4 sm:p-6">
 
+      {/* 🔥 HEADER */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
         <h1 className="text-2xl sm:text-3xl font-bold">
           Projects
         </h1>
-     
-        <button
-          onClick={() => setShowModal(true)}
-          className="button-primary w-full sm:w-auto"
-        >
-          + New Project
-        </button>
 
+        {user?.role === "admin" && (
+          <button
+            onClick={() => setShowModal(true)}
+            className="button-primary w-full sm:w-auto"
+          >
+            + New Project
+          </button>
+        )}
       </div>
 
       {projects.length === 0 && (
         <p className="text-secondary">No projects found</p>
       )}
 
+      {/* 🔥 PROJECT GRID */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
         {projects.map((p) => {
           const stats = getStats(p._id);
 
           return (
             <Link key={p._id} to={`/project/${p._id}`}>
-              <div className="card p-4 sm:p-5 card-hover border border-gray-200 dark:border-gray-700 cursor-pointer">
+              <div className="card p-4 sm:p-5 card-hover border border-gray-200 dark:border-gray-700 cursor-pointer relative">
 
+                {/* 🔥 EDIT BUTTON */}
+                {user?.role === "admin" && (
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault(); // 🔥 prevent navigation
+                      setEditProject(p);
+                    }}
+                    className="absolute top-3 right-3 text-xs bg-yellow-500 text-white px-2 py-1 rounded hover:bg-yellow-600"
+                  >
+                    Edit
+                  </button>
+                )}
+
+                {/* 🔥 PROJECT INFO */}
                 <h2 className="text-base sm:text-lg font-semibold mb-1">
                   {p.name}
                 </h2>
@@ -74,6 +99,7 @@ export default function ProjectsPage() {
                   {p.description}
                 </p>
 
+                {/* 🔥 STATS */}
                 <div className="text-sm mb-4 space-y-1">
                   <p>📊 {stats.total} tasks</p>
                   <p className="text-blue-500">Todo: {stats.todo}</p>
@@ -85,8 +111,9 @@ export default function ProjectsPage() {
                   </p>
                 </div>
 
-                <div className="meta-text">
-                  <p>Owner: User</p>
+                {/* 🔥 META */}
+                <div className="meta-text text-xs text-gray-500">
+                  <p>Owner: {p.owner?.name || "You"}</p>
                   <p>
                     {p.created_at
                       ? new Date(p.created_at).toLocaleDateString()
@@ -100,12 +127,23 @@ export default function ProjectsPage() {
         })}
       </div>
 
+      {/* 🔥 CREATE PROJECT MODAL */}
       {showModal && (
         <ProjectModal
           onClose={() => setShowModal(false)}
           onSuccess={fetchData}
         />
       )}
+
+      {/* 🔥 EDIT PROJECT MODAL */}
+      {editProject && (
+        <EditProjectModal
+          project={editProject}
+          onClose={() => setEditProject(null)}
+          onSuccess={fetchData}
+        />
+      )}
+
     </div>
   );
 }

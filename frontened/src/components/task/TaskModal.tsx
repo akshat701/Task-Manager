@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { apiClient } from "../../api/apiClient";
+import { useAuthStore } from "../../store/authStore";
 
 export default function TaskModal({
   projectId,
@@ -7,6 +8,8 @@ export default function TaskModal({
   onSuccess,
   task,
 }: any) {
+  const { user } = useAuthStore();
+
   const [title, setTitle] = useState(task?.title || "");
   const [status, setStatus] = useState(task?.status || "todo");
   const [priority, setPriority] = useState(task?.priority || "medium");
@@ -14,39 +17,69 @@ export default function TaskModal({
   const [users, setUsers] = useState<any[]>([]);
   const [assignee, setAssignee] = useState(task?.assignee_id || "");
 
+  // 🔥 Fetch project members ONLY
   useEffect(() => {
-    apiClient.get("/users").then((res) => {
-      setUsers(res.data);
-    });
-  }, []);
+    if (!projectId) return;
 
+    const fetchMembers = async () => {
+      try {
+        const res = await apiClient.get(`/projects/${projectId}`);
+
+        const members = res.data.members || [];
+
+        const formatted = members.map((m: any) => ({
+          _id: m.user._id,
+          name: m.user.name,
+        }));
+
+        setUsers(formatted);
+      } catch (err) {
+        console.error(err);
+      }
+    };
+
+    fetchMembers();
+  }, [projectId]);
+
+  // 🔥 Submit Handler (RBAC SAFE)
   const handleSubmit = async () => {
     if (!title.trim()) {
       alert("Title is required");
       return;
     }
 
-    if (task) {
-      await apiClient.patch(`/tasks/${task.id}`, {
-        title,
-        status,
-        priority,
-        assignee_id: assignee,
-        due_date: dueDate,
-      });
-    } else {
-      await apiClient.post("/tasks", {
-        title,
-        status,
-        priority,
-        project_id: projectId,
-        assignee_id: assignee,
-        due_date: dueDate,
-      });
-    }
+    try {
+      if (task) {
+        // 🔥 UPDATE
+        await apiClient.patch(`/tasks/${task.id}`, {
+          // 👑 admin only fields
+          ...(user?.role === "admin" && {
+            title,
+            priority,
+            assignee_id: assignee,
+            due_date: dueDate,
+          }),
 
-    onSuccess();
-    onClose();
+          // 👤 everyone can change status
+          status,
+        });
+      } else {
+        // 🔥 CREATE (admin only ideally, backend will check)
+        await apiClient.post("/tasks", {
+          title,
+          status,
+          priority,
+          project_id: projectId,
+          assignee_id: assignee,
+          due_date: dueDate,
+        });
+      }
+
+      onSuccess();
+      onClose();
+    } catch (err) {
+      console.error(err);
+    }
   };
 
   return (
@@ -57,13 +90,21 @@ export default function TaskModal({
           {task ? "Edit Task" : "Create Task"}
         </h2>
 
-        <input
-          className="input w-full mb-3"
-          placeholder="Task title"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
+        {/* 🔥 TITLE (ADMIN ONLY EDITABLE) */}
+        {user?.role === "admin" ? (
+          <input
+            className="input w-full mb-3"
+            placeholder="Task title"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+        ) : (
+          <div className="mb-3 text-sm text-gray-700">
+            📝 {title}
+          </div>
+        )}
 
+        {/* 🔥 STATUS (ALL CAN CHANGE) */}
         <select
           className="input w-full mb-3"
           value={status}
@@ -74,36 +115,51 @@ export default function TaskModal({
           <option value="done">Done</option>
         </select>
 
-        <select
-          className="input w-full mb-3"
-          value={priority}
-          onChange={(e) => setPriority(e.target.value)}
-        >
-          <option value="low">Low</option>
-          <option value="medium">Medium</option>
-          <option value="high">High</option>
-        </select>
+        {/* 🔥 PRIORITY (ADMIN ONLY) */}
+        {user?.role === "admin" && (
+          <select
+            className="input w-full mb-3"
+            value={priority}
+            onChange={(e) => setPriority(e.target.value)}
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        )}
 
-        <select
-          className="input w-full mb-3"
-          value={assignee}
-          onChange={(e) => setAssignee(e.target.value)}
-        >
-          <option value="">Unassigned</option>
-          {users.map((u) => (
-            <option key={u._id} value={u._id}>
-              {u.name}
-            </option>
-          ))}
-        </select>
+        {/* 🔥 ASSIGNEE */}
+        {user?.role === "admin" ? (
+          <select
+            className="input w-full mb-3"
+            value={assignee}
+            onChange={(e) => setAssignee(e.target.value)}
+          >
+            <option value="">Unassigned</option>
+            {users.map((u) => (
+              <option key={u._id} value={u._id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        ) : (
+          <div className="mb-3 text-sm text-gray-600">
+            👤 Assigned to:{" "}
+            {users.find((u) => u._id === assignee)?.name || "You"}
+          </div>
+        )}
 
-        <input
-          type="date"
-          className="input w-full mb-4"
-          value={dueDate}
-          onChange={(e) => setDueDate(e.target.value)}
-        />
+        {/* 🔥 DUE DATE (ADMIN ONLY) */}
+        {user?.role === "admin" && (
+          <input
+            type="date"
+            className="input w-full mb-4"
+            value={dueDate}
+            onChange={(e) => setDueDate(e.target.value)}
+          />
+        )}
 
+        {/* 🔥 ACTIONS */}
         <div className="flex flex-col sm:flex-row justify-end gap-2">
           <button
             onClick={onClose}
@@ -119,6 +175,7 @@ export default function TaskModal({
             {task ? "Update" : "Create"}
           </button>
         </div>
+
       </div>
     </div>
   );

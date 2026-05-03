@@ -17,13 +17,13 @@ export default function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-<Route path="/register" element={<RegisterPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route
           path="/"
           element={
             <ProtectedRoute>
               <AppLayout>
-              <ProjectsPage />
+                <Dashboard />
               </AppLayout>
             </ProtectedRoute>
           }
@@ -34,22 +34,22 @@ export default function AppRouter() {
           element={
             <ProtectedRoute>
               <AppLayout>
-              <ProjectDetailPage />
+                <ProjectDetailPage />
               </AppLayout>
             </ProtectedRoute>
           }
         />
 
         <Route
-  path="/dashboard"
-  element={
-    <ProtectedRoute>
-      <AppLayout>
-        <Dashboard />
-      </AppLayout>
-    </ProtectedRoute>
-  }
-/>
+          path="/project"
+          element={
+            <ProtectedRoute>
+              <AppLayout>
+                <ProjectsPage />
+              </AppLayout>
+            </ProtectedRoute>
+          }
+        />
       </Routes>
     </BrowserRouter>
   );
