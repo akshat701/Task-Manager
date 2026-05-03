@@ -121,7 +121,7 @@ export default function Dashboard() {
         <Card title="Overdue" value={stats.overdueTasks} color="red" />
       </div>
 
-      <div className="bg-white p-5 rounded-xl shadow border">
+      <div className="app-bg p-5 rounded-xl shadow border">
         <h2 className="text-lg font-semibold mb-4">
           {user?.role === "admin" ? "All Tasks (Project-wise)" : "My Tasks"}
         </h2>
@@ -150,7 +150,7 @@ export default function Dashboard() {
                 {tasks.map((task: any) => (
                   <div
                     key={task.id}
-                    className="flex justify-between items-center bg-gray-50 p-2 rounded"
+                    className="flex justify-between items-center app-bg p-2 rounded"
                   >
                     <span className="text-sm font-medium">{task.title}</span>
 
@@ -174,7 +174,7 @@ export default function Dashboard() {
       </div>
 
       {user?.role === "admin" && (
-        <div className="bg-white p-6 rounded-2xl shadow border">
+        <div className="app-bg p-6 rounded-2xl shadow border">
           <h2 className="text-xl font-semibold mb-5">👥 Team Performance</h2>
 
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -191,7 +191,7 @@ export default function Dashboard() {
               return (
                 <div
                   key={userName}
-                  className="bg-gray-50 border rounded-xl p-4 hover:shadow-md transition"
+                  className="app-bg border rounded-xl p-4 hover:shadow-md transition"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -234,7 +234,7 @@ export default function Dashboard() {
       )}
 
       {user?.role === "admin" && (
-        <div className="bg-white p-5 rounded-xl shadow border">
+        <div className="app-bg p-5 rounded-xl shadow border">
           <h2 className="text-lg font-semibold mb-4">📁 Project Progress</h2>
 
           <div className="space-y-3">
